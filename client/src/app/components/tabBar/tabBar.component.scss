@@ -1,0 +1,43 @@
+@use '../../styles/shared' as *;
+
+ion-tab-bar {
+  --background: rgba(18, 19, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  --border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: env(safe-area-inset-bottom);
+  height: 56px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+
+  ion-tab-button {
+    --color: rgba(255, 255, 255, 0.45);
+    --color-selected: #00f2fe;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+
+    ion-icon {
+      font-size: 20px;
+      margin-bottom: 3px;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &:hover {
+      --color: rgba(255, 255, 255, 0.85);
+      ion-icon {
+        transform: translateY(-2px);
+      }
+    }
+
+    &.tab-selected {
+      text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+      ion-icon {
+        transform: scale(1.1) translateY(-1px);
+        filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
+      }
+    }
+  }
+}

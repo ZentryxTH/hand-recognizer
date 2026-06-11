@@ -1,0 +1,58 @@
+@use '../../styles/shared' as *;
+
+:host {
+  display: block;
+}
+
+.settings-trigger {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+
+  ion-button {
+    @include settings-trigger-button();
+  }
+}
+
+.settings-overlay {
+  @include settings-overlay($position-left: 16px);
+  @include glass-panel();
+  @include scrollable();
+}
+
+.settings-header {
+  @include settings-header();
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .section-title {
+    @include section-title();
+  }
+}
+
+.bg-transparent {
+  @include transparent-item();
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+ion-segment {
+  @include ion-segment-theme();
+}
+
+ion-select {
+  @include ion-select-theme();
+}
