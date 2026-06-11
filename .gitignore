@@ -1,3 +1,13 @@
+# System Files
+.DS_Store
+Thumbs.db
+
+# Ionic
+www/
+dist/
+build/
+.ionic/
+
 # Angular specific
 /dist/
 /out-tsc/
@@ -23,6 +33,27 @@
 *.tsbuildinfo
 
 # Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Python
+.venv
+*.pyc
+__pycache__
+
+
+# VSCode
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Data & Model
+server/data/*
+server/models/*
+client/src/assets/models/*

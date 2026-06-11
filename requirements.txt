@@ -1,0 +1,6 @@
+numpy
+torch
+tensorflow
+mediapipe
+opencv-python
+onnx
