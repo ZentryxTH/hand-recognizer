@@ -60,5 +60,5 @@ client/src/assets/models/*
 server/results/*
 
 # Others
-GUIDE.md
 DEPLOYMENT.md
+GUIDE.md
