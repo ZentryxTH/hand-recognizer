@@ -1,13 +1,20 @@
 import { Routes } from '@angular/router';
+import { TabBarComponent } from './components/tabBar/tabBar.component';
 
 export const routes: Routes = [
   {
-    path: 'home',
-    loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
+    path: '',
+    component: TabBarComponent,
+    children: [
+      {
+        path: 'scanner',
+        loadComponent: () => import('./scanner/scanner.page').then((m) => m.ScannerPage),
+      },
+    ],
   },
   {
     path: '',
-    redirectTo: 'home',
+    redirectTo: 'scanner',
     pathMatch: 'full',
   },
 ];
