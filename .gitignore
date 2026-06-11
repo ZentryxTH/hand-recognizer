@@ -57,3 +57,7 @@ __pycache__
 server/data/*
 server/models/*
 client/src/assets/models/*
+server/results/*
+
+# Others
+GUIDE.md
