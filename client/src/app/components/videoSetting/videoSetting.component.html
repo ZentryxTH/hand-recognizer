@@ -1,0 +1,42 @@
+<div class="settings-trigger">
+  <ion-button fill="clear" (click)="togglePanel(); $event.stopPropagation()">
+    <ion-icon slot="icon-only" name="resize-outline"></ion-icon>
+  </ion-button>
+</div>
+
+<div class="settings-overlay glass scrollable" *ngIf="isOpen" (click)="$event.stopPropagation()">
+  <div class="settings-header">
+    <h3>Resolution & Ratio</h3>
+    <ion-button fill="clear" color="light" (click)="togglePanel()">
+      <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+    </ion-button>
+  </div>
+
+  <div class="settings-content">
+    <div class="settings-section">
+      <span class="section-title">Capture Quality</span>
+      <ion-item class="bg-transparent text-white">
+        <ion-select [value]="targetResolution" (ionChange)="resolutionChange.emit($event.detail.value)" interface="popover">
+          <ion-select-option *ngFor="let res of availableResolutions" [value]="res.value">
+            {{ res.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+    </div>
+
+    <div class="settings-section">
+      <span class="section-title">Aspect Ratio</span>
+      <ion-item class="bg-transparent text-white">
+        <ion-select [value]="selectedAspectRatio" (ionChange)="aspectRatioChange.emit($event.detail.value)" interface="popover">
+          <ion-select-option value="16:9">16:9 (Widescreen)</ion-select-option>
+          <ion-select-option value="9:16">9:16 (Vertical)</ion-select-option>
+          <ion-select-option value="4:3">4:3 (Classic)</ion-select-option>
+          <ion-select-option value="3:4">3:4 (Portrait)</ion-select-option>
+          <ion-select-option value="5:4">5:4 (Tall)</ion-select-option>
+          <ion-select-option value="4:5">4:5 (Compact)</ion-select-option>
+          <ion-select-option value="1:1">1:1 (Square)</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </div>
+  </div>
+</div>
