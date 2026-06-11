@@ -1,0 +1,210 @@
+// ─── Color Tokens (Minimal Clean Palette) ───
+$bg-dark: #08090c;
+$bg-surface: #111216;
+$accent: #00f2fe;                       // Soft Cyan accent
+$accent-purple: #a855f7;                // Soft Purple accent
+$accent-muted: rgba(0, 242, 254, 0.3);
+$text-primary: rgba(255, 255, 255, 0.95);
+$text-secondary: rgba(255, 255, 255, 0.6);
+$text-dim: rgba(255, 255, 255, 0.35);
+$border-subtle: rgba(255, 255, 255, 0.08);
+$border-focus: rgba(0, 242, 254, 0.3);
+
+// ─── Minimal Surface Panel Mixin ───
+@mixin glass-panel() {
+  background: rgba(17, 18, 22, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+// ─── Surface Panel Mixin ───
+@mixin surface-panel() {
+  background: $bg-surface;
+  border: 1px solid $border-subtle;
+  border-radius: 12px;
+}
+
+// ─── Scrollable Container Mixin ───
+@mixin scrollable() {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+}
+
+// ─── Settings Overlay Mixin ───
+@mixin settings-overlay($position-left: null, $position-right: null) {
+  position: absolute;
+  top: 68px;
+  z-index: 100;
+  width: 280px;
+  max-height: 420px;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+
+  @if $position-left != null {
+    left: $position-left;
+  }
+  @if $position-right != null {
+    right: $position-right;
+  }
+
+  // Mobile viewport overrides to center panels
+  @media (max-width: 576px) {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 310px;
+  }
+}
+
+// ─── Settings Trigger Button Mixin (Flat and minimal) ───
+@mixin settings-trigger-button() {
+  --color: #00f2fe;
+  background: rgba(0, 242, 254, 0.03);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  --padding-start: 0;
+  --padding-end: 0;
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    background: rgba(0, 242, 254, 0.1);
+    border-color: #00f2fe;
+    --color: #ffffff;
+    box-shadow: 0 0 16px rgba(0, 242, 254, 0.45);
+    transform: scale(1.05);
+  }
+
+  &:focus, &:focus-within {
+    outline: 2px solid rgba(0, 242, 254, 0.5);
+    outline-offset: 2px;
+    border-color: #00f2fe;
+    --color: #ffffff;
+    box-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
+  }
+
+  &:active {
+    background: rgba(0, 242, 254, 0.2);
+    border-color: #00f2fe;
+    --color: #ffffff;
+    box-shadow: 0 0 24px rgba(0, 242, 254, 0.7);
+    transform: scale(0.95);
+  }
+}
+
+// ─── Settings Header Mixin ───
+@mixin settings-header() {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid $border-subtle;
+
+  h3 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  ion-button {
+    height: 20px;
+    width: 20px;
+    --padding-start: 0;
+    --padding-end: 0;
+    --color: $text-dim;
+  }
+}
+
+// ─── Section Title Mixin ───
+@mixin section-title() {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: $text-secondary;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+// ─── Form Element Overrides ───
+@mixin transparent-item() {
+  background: transparent !important;
+  --background: transparent !important;
+  color: $text-primary !important;
+  --min-height: 36px;
+  padding: 0;
+}
+
+@mixin ion-segment-theme() {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 1px;
+
+  ion-segment-button {
+    --color: $text-secondary;
+    --color-checked: #00f2fe;
+    --indicator-color: rgba(0, 242, 254, 0.12);
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 6px;
+    min-height: 30px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      --color: #00f2fe;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    &:focus, &:focus-within {
+      outline: 2px solid rgba(0, 242, 254, 0.4);
+      outline-offset: -2px;
+      --color: #00f2fe;
+    }
+
+    &.segment-button-checked {
+      border: 1px solid rgba(0, 242, 254, 0.25);
+    }
+  }
+}
+
+@mixin ion-range-theme() {
+  --bar-background: rgba(255, 255, 255, 0.06);
+  --bar-background-active: rgba(255, 255, 255, 0.4);
+  --knob-background: #ffffff;
+  --knob-size: 14px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+@mixin ion-select-theme() {
+  --placeholder-color: $text-secondary;
+  --placeholder-opacity: 1;
+  color: $text-primary;
+  font-size: 12px;
+  font-weight: 500;
+  width: 100%;
+  --background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 5px 10px;
+}

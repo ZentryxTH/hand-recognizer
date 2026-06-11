@@ -1,17 +1,17 @@
 import { Component } from '@angular/core';
-import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel } from '@ionic/angular/standalone';
+import { IonTabBar, IonTabButton, IonIcon, IonLabel, IonTabs } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { scan } from 'ionicons/icons';
+import { scanOutline, settingsOutline, informationCircleOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab-bar',
   templateUrl: './tabBar.component.html',
   styleUrls: ['./tabBar.component.scss'],
   standalone: true,
-  imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel],
+  imports: [IonTabBar, IonTabButton, IonIcon, IonLabel, IonTabs]
 })
 export class TabBarComponent {
   constructor() {
-    addIcons({ scan });
+    addIcons({ scanOutline, settingsOutline, informationCircleOutline });
   }
 }

@@ -1,0 +1,46 @@
+<div class="metadata-panel" *ngIf="metadata">
+  <div class="meta-header">
+    <ion-icon name="image-outline"></ion-icon>
+    <span>File Details & Processing Info</span>
+  </div>
+  <div class="meta-grid">
+    <div class="meta-item">
+      <span class="meta-label">Format:</span>
+      <span class="meta-value">{{ metadata.type.split('/')[1] | uppercase }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Original:</span>
+      <span class="meta-value">{{ metadata.originalResolution }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Processed:</span>
+      <span class="meta-value">{{ metadata.processedResolution }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Rotation:</span>
+      <span class="meta-value">{{ metadata.rotation }}°</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">File Size:</span>
+      <span class="meta-value">{{ metadata.size }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Engine:</span>
+      <span class="meta-value">{{ delegate }}</span>
+    </div>
+  </div>
+
+  <div class="predictions-row" *ngIf="detectedHandsList && detectedHandsList.length > 0">
+    <div class="predictions-divider">Predictions</div>
+    <div class="detail-row">
+      <ng-container *ngFor="let hand of detectedHandsList">
+        <div class="detail-badge pink-bg">
+          <span>{{ hand.handedness }} {{ hand.score }}%</span>
+        </div>
+        <div class="detail-badge cyan-bg" *ngIf="activeMode === 'gesture-recognizer' && hand.gesture !== 'N/A' && hand.gesture !== 'None'">
+          <span>{{ hand.gesture }} ({{ hand.gestureScore }}%)</span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

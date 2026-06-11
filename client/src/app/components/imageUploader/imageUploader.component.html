@@ -1,0 +1,38 @@
+<div class="uploader-container glass">
+  <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+
+  <!-- Upload Drop Zone -->
+  <div class="drop-zone" *ngIf="!imageSrc" (click)="triggerSelect()">
+    <ion-icon name="cloud-upload-outline" class="upload-icon"></ion-icon>
+    <p>Upload a Hand Image to Analyze</p>
+    <ion-button fill="outline" color="light">Choose Image</ion-button>
+  </div>
+
+  <!-- Image Settings and Canvas Preview (Visible when image loaded) -->
+  <div class="preview-container" *ngIf="imageSrc">
+
+    <div class="direct-upload-bar">
+      <ion-button fill="clear" class="btn-change-image" (click)="triggerSelect()">
+        <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+        Upload New Image
+      </ion-button>
+    </div>
+
+    <!-- Active Canvas Display -->
+    <div class="canvas-wrapper">
+      <canvas #canvasOverlay class="canvas-display"></canvas>
+
+      <div class="loader-overlay" *ngIf="isLoading">
+        <ion-spinner name="crescent" color="light"></ion-spinner>
+        <p>Analyzing Image Landmarks...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remove Button -->
+  <div class="action-row" *ngIf="metadata">
+    <ion-button expand="block" fill="clear" color="danger" class="btn-clear" (click)="clearImage()">
+      Remove Image
+    </ion-button>
+  </div>
+</div>

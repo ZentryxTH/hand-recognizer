@@ -1,0 +1,9 @@
+<div class="video-container" [ngClass]="[getRatioClass(), isFrontCamera ? 'mirrored' : '']">
+  <video #videoElement autoplay playsinline muted></video>
+  <canvas #canvasOverlay class="canvas-overlay"></canvas>
+
+  <div class="camera-loader" *ngIf="isLoading">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p class="loader-text">Loading MediaPipe Models ({{ delegate }})...</p>
+  </div>
+</div>

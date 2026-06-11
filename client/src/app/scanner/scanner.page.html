@@ -1,5 +1,147 @@
-<ion-header>
-  <ion-toolbar>
-    <app-model-segments></app-model-segments>
+<ion-header class="ion-no-border">
+  <div class="header-segment-wrapper">
+    <app-model-segments [activeMode]="activeMode" (modeChange)="onSegmentChange($event)"></app-model-segments>
+  </div>
+
+  <ion-toolbar class="source-toolbar">
+    <ion-segment [value]="scanSource" (ionChange)="onSourceChange($event)">
+      <ion-segment-button value="webcam">
+        <ion-label>Video Capture</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="upload">
+        <ion-label>Upload Image</ion-label>
+      </ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
+
+<ion-content [fullscreen]="true" class="scanner-content">
+  <div class="scanner-container">
+
+    <!-- Responsive workspace layout container -->
+    <div class="scanner-workspace">
+      
+      <!-- Positioned relative so overlays stay constrained to camera/uploader width -->
+      <div class="media-wrapper">
+        <app-video-panel
+          *ngIf="scanSource === 'webcam'"
+          [activeMode]="activeMode"
+          [maxHands]="maxHands"
+          [minDetectionConfidence]="minDetectionConfidence"
+          [minPresenceConfidence]="minPresenceConfidence"
+          [minTrackingConfidence]="minTrackingConfidence"
+          [delegate]="delegate"
+          [selectedCameraId]="selectedCameraId"
+          [isFrontCamera]="isFrontCamera"
+          [targetResolution]="targetResolution"
+          [selectedAspectRatio]="selectedAspectRatio"
+          (telemetryUpdate)="onTelemetryUpdate($event)"
+          (modelLoaded)="onModelLoaded($event)"
+          (camerasEnumerated)="onCamerasEnumerated($event)"
+          (resolutionsDetected)="onResolutionsDetected($event)"
+        ></app-video-panel>
+
+        <app-image-uploader
+          *ngIf="scanSource === 'upload'"
+          [activeMode]="activeMode"
+          [maxHands]="maxHands"
+          [minDetectionConfidence]="minDetectionConfidence"
+          [minPresenceConfidence]="minPresenceConfidence"
+          [minTrackingConfidence]="minTrackingConfidence"
+          [delegate]="delegate"
+          [selectedAspectRatio]="imageAspectRatio"
+          [targetResolution]="imageResolution"
+          [rotationDegrees]="imageRotation"
+          (imageProcessed)="onTelemetryUpdate($event)"
+          (metadataExtracted)="onMetadataExtracted($event)"
+        ></app-image-uploader>
+
+        <!-- Floating settings menus - aligned to top-left and top-right of the active media panel -->
+        <app-camera-setting
+          *ngIf="scanSource === 'webcam'"
+          [cameras]="cameras"
+          [selectedCameraId]="selectedCameraId"
+          [isFrontCamera]="isFrontCamera"
+          (cameraChange)="onCameraChange($event)"
+          (isFrontCameraChange)="onFrontCameraChange($event)"
+        ></app-camera-setting>
+
+        <app-video-setting
+          *ngIf="scanSource === 'webcam'"
+          [targetResolution]="targetResolution"
+          [selectedAspectRatio]="selectedAspectRatio"
+          [availableResolutions]="detectedResolutions"
+          (resolutionChange)="onResolutionChange($event)"
+          (aspectRatioChange)="onAspectRatioChange($event)"
+        ></app-video-setting>
+
+        <app-image-setting
+          *ngIf="scanSource === 'upload'"
+          [selectedAspectRatio]="imageAspectRatio"
+          [targetResolution]="imageResolution"
+          [rotationDegrees]="imageRotation"
+          (aspectRatioChange)="onImageAspectRatioChange($event)"
+          (resolutionChange)="onImageResolutionChange($event)"
+          (rotateClockwise)="onImageRotateClockwise()"
+          (rotateCounterClockwise)="onImageRotateCounterClockwise()"
+        ></app-image-setting>
+
+        <app-model-setting
+          [activeMode]="activeMode"
+          [maxHands]="maxHands"
+          [minDetectionConfidence]="minDetectionConfidence"
+          [minPresenceConfidence]="minPresenceConfidence"
+          [minTrackingConfidence]="minTrackingConfidence"
+          [delegate]="delegate"
+          (maxHandsChange)="onMaxHandsChange($event)"
+          (minDetectionConfidenceChange)="onMinDetectionConfidenceChange($event)"
+          (minPresenceConfidenceChange)="onMinPresenceConfidenceChange($event)"
+          (minTrackingConfidenceChange)="onMinTrackingConfidenceChange($event)"
+          (delegateChange)="onDelegateChange($event)"
+        ></app-model-setting>
+
+        <!-- Model ready notification floating above the display area -->
+        <div class="load-badge glass-badge" [class.fade-out]="!showBadge" *ngIf="modelLoadTime !== null">
+          <span class="pulse-dot"></span>
+          <span class="badge-text">Model Ready: {{ modelLoadTime }}ms</span>
+        </div>
+      </div>
+
+      <!-- Telemetry Dashboard flows naturally below the media wrapper to prevent overlap -->
+      <div class="status-wrapper" *ngIf="!isMenuOpen()">
+        <div class="status-card glass">
+          <app-model-status
+            [activeMode]="activeMode"
+            [delegate]="delegate"
+            [modelLoadTime]="modelLoadTime"
+          ></app-model-status>
+
+          <app-video-status
+            *ngIf="scanSource === 'webcam'"
+            [activeMode]="activeMode"
+            [fps]="telemetry.fps"
+            [inferenceTime]="telemetry.inferenceTime"
+            [doneTime]="telemetry.doneTime"
+            [handsDetected]="telemetry.handsDetected"
+            [handedness]="telemetry.handedness"
+            [gesture]="telemetry.gesture"
+            [gestureScore]="telemetry.gestureScore"
+            [detectedHandsList]="telemetry.detectedHandsList"
+            [streamWidth]="telemetry.streamWidth"
+            [streamHeight]="telemetry.streamHeight"
+          ></app-video-status>
+
+          <app-image-metadata
+            *ngIf="scanSource === 'upload'"
+            [metadata]="uploadedMetadata"
+            [delegate]="delegate"
+            [activeMode]="activeMode"
+            [detectedHandsList]="telemetry.detectedHandsList"
+          ></app-image-metadata>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</ion-content>

@@ -1,0 +1,78 @@
+@use '../../styles/shared' as *;
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  background: #08090c;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  &.ratio-16-9 { aspect-ratio: 16 / 9; }
+  &.ratio-9-16 { aspect-ratio: 9 / 16; max-width: 420px; }
+  &.ratio-4-3  { aspect-ratio: 4 / 3; max-width: 680px; }
+  &.ratio-3-4  { aspect-ratio: 3 / 4; max-width: 520px; }
+  &.ratio-5-4  { aspect-ratio: 5 / 4; max-width: 620px; }
+  &.ratio-4-5  { aspect-ratio: 4 / 5; max-width: 520px; }
+  &.ratio-1-1  { aspect-ratio: 1 / 1; max-width: 520px; }
+
+  video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0.001;
+    pointer-events: none;
+    z-index: -9999;
+  }
+
+  .canvas-overlay {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    z-index: 5;
+  }
+}
+
+.camera-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 9, 12, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+  ion-spinner {
+    width: 48px;
+    height: 48px;
+    --color: #ffffff;
+  }
+
+  .loader-text {
+    margin-top: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+}
+
