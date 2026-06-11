@@ -55,8 +55,6 @@ __pycache__
 
 # Data & Model
 server/data/*
-server/models/*
-client/src/assets/models/*
 server/results/*
 
 # Others
