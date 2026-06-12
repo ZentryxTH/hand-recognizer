@@ -1,13 +1,13 @@
 <div class="settings-trigger">
-  <ion-button fill="clear" (click)="togglePanel(); $event.stopPropagation()">
+  <ion-button fill="clear" (click)="togglePanel($event)">
     <ion-icon slot="icon-only" name="sparkles-outline"></ion-icon>
   </ion-button>
 </div>
 
 <div class="settings-overlay glass scrollable" *ngIf="isOpen" (click)="$event.stopPropagation()">
   <div class="settings-header">
-    <h3>{{ activeMode === 'hand-landmarker' ? 'Hand Landmarker Settings' : 'Gesture Recognizer Settings' }}</h3>
-    <ion-button fill="clear" color="light" (click)="togglePanel()">
+    <h3>Gesture Recognizer Settings</h3>
+    <ion-button fill="clear" color="light" (click)="togglePanel($event)">
       <ion-icon slot="icon-only" name="close-outline"></ion-icon>
     </ion-button>
   </div>
@@ -15,7 +15,7 @@
   <div class="settings-content">
     <div class="settings-section">
       <span class="section-title">Hardware Engine</span>
-      <ion-segment [value]="delegate" (ionChange)="delegateChange.emit($any($event).detail.value)">
+      <ion-segment [value]="delegate" (ionChange)="onDelegateChange($event)">
         <ion-segment-button value="GPU">
           <ion-label>GPU</ion-label>
         </ion-segment-button>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="settings-section">
-      <span class="section-title">{{ activeMode === 'hand-landmarker' ? 'Num Hands' : 'Num Hands' }}</span>
+      <span class="section-title">Num Hands</span>
       <ion-item class="bg-transparent text-white">
         <ion-range
           [value]="maxHands"
@@ -34,55 +34,49 @@
           [max]="6"
           [snaps]="true"
           [ticks]="true"
-          (ionInput)="maxHandsChange.emit($any($event).detail.value)"
+          (ionInput)="onMaxHandsInput($event)"
         ></ion-range>
       </ion-item>
       <span class="range-info">Limit: {{ maxHands }}</span>
     </div>
 
     <div class="settings-section">
-      <span class="section-title">
-        {{ activeMode === 'hand-landmarker' ? 'Min Detection Confidence' : 'Min Hand Detection' }}
-      </span>
+      <span class="section-title">Min Hand Detection</span>
       <ion-item class="bg-transparent text-white">
         <ion-range
           [value]="minDetectionConfidence"
           [min]="0.1"
           [max]="0.9"
           [step]="0.05"
-          (ionInput)="minDetectionConfidenceChange.emit($any($event).detail.value)"
+          (ionInput)="onMinDetectionConfidenceInput($event)"
         ></ion-range>
       </ion-item>
       <span class="range-info">Confidence: {{ minDetectionConfidence | percent }}</span>
     </div>
 
     <div class="settings-section">
-      <span class="section-title">
-        {{ activeMode === 'hand-landmarker' ? 'Min Presence Confidence' : 'Min Hand Presence' }}
-      </span>
+      <span class="section-title">Min Hand Presence</span>
       <ion-item class="bg-transparent text-white">
         <ion-range
           [value]="minPresenceConfidence"
           [min]="0.1"
           [max]="0.9"
           [step]="0.05"
-          (ionInput)="minPresenceConfidenceChange.emit($any($event).detail.value)"
+          (ionInput)="onMinPresenceConfidenceInput($event)"
         ></ion-range>
       </ion-item>
       <span class="range-info">Confidence: {{ minPresenceConfidence | percent }}</span>
     </div>
 
     <div class="settings-section">
-      <span class="section-title">
-        {{ activeMode === 'hand-landmarker' ? 'Min Tracking Confidence' : 'Min Tracking' }}
-      </span>
+      <span class="section-title">Min Tracking</span>
       <ion-item class="bg-transparent text-white">
         <ion-range
           [value]="minTrackingConfidence"
           [min]="0.1"
           [max]="0.9"
           [step]="0.05"
-          (ionInput)="minTrackingConfidenceChange.emit($any($event).detail.value)"
+          (ionInput)="onMinTrackingConfidenceInput($event)"
         ></ion-range>
       </ion-item>
       <span class="range-info">Confidence: {{ minTrackingConfidence | percent }}</span>

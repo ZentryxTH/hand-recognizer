@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DetectedHand } from '../../../models/telemetry.interface';
 
 @Component({
   selector: 'app-video-status',
@@ -9,7 +10,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule]
 })
 export class VideoStatusComponent {
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() fps = 0;
   @Input() inferenceTime = 0;
   @Input() doneTime = 0;
@@ -17,7 +18,11 @@ export class VideoStatusComponent {
   @Input() handedness = 'N/A';
   @Input() gesture = 'N/A';
   @Input() gestureScore = 0;
-  @Input() detectedHandsList: Array<{ handedness: string, score: number, gesture: string, gestureScore: number }> = [];
+  @Input() detectedHandsList: DetectedHand[] = [];
   @Input() streamWidth = 0;
   @Input() streamHeight = 0;
+
+  trackByIndex(index: number): number {
+    return index;
+  }
 }

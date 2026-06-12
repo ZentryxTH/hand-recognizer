@@ -1,8 +1,8 @@
 {
-  "name": "client",
-  "version": "0.0.1",
-  "author": "Ionic Framework",
-  "homepage": "https://ionicframework.com/",
+  "name": "hand-recognizer-client",
+  "version": "0.1.0",
+  "author": "ZentryxTH",
+  "homepage": "https://github.com/ZentryxTH/hand-recognizer",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -76,5 +76,5 @@
     "uuid": "^11.1.1",
     "webpack-dev-server": "^5.2.4"
   },
-  "description": "An Ionic project"
+  "description": "Hand Recognizer client using Angular 20, Ionic 8, Capacitor 8, and MediaPipe Tasks Vision."
 }

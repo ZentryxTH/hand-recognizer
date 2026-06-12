@@ -1,7 +1,4 @@
 <ion-header class="ion-no-border">
-  <div class="header-segment-wrapper">
-    <app-model-segments [activeMode]="activeMode" (modeChange)="onSegmentChange($event)"></app-model-segments>
-  </div>
 
   <ion-toolbar class="source-toolbar">
     <ion-segment [value]="scanSource" (ionChange)="onSourceChange($event)">
@@ -25,7 +22,7 @@
       <div class="media-wrapper">
         <app-video-panel
           *ngIf="scanSource === 'webcam'"
-          [activeMode]="activeMode"
+
           [maxHands]="maxHands"
           [minDetectionConfidence]="minDetectionConfidence"
           [minPresenceConfidence]="minPresenceConfidence"
@@ -43,7 +40,7 @@
 
         <app-image-uploader
           *ngIf="scanSource === 'upload'"
-          [activeMode]="activeMode"
+
           [maxHands]="maxHands"
           [minDetectionConfidence]="minDetectionConfidence"
           [minPresenceConfidence]="minPresenceConfidence"
@@ -62,6 +59,8 @@
           [cameras]="cameras"
           [selectedCameraId]="selectedCameraId"
           [isFrontCamera]="isFrontCamera"
+          [isOpen]="openMenu === 'camera'"
+          (isOpenChange)="onMenuOpenChange('camera', $event)"
           (cameraChange)="onCameraChange($event)"
           (isFrontCameraChange)="onFrontCameraChange($event)"
         ></app-camera-setting>
@@ -71,6 +70,8 @@
           [targetResolution]="targetResolution"
           [selectedAspectRatio]="selectedAspectRatio"
           [availableResolutions]="detectedResolutions"
+          [isOpen]="openMenu === 'video'"
+          (isOpenChange)="onMenuOpenChange('video', $event)"
           (resolutionChange)="onResolutionChange($event)"
           (aspectRatioChange)="onAspectRatioChange($event)"
         ></app-video-setting>
@@ -80,6 +81,8 @@
           [selectedAspectRatio]="imageAspectRatio"
           [targetResolution]="imageResolution"
           [rotationDegrees]="imageRotation"
+          [isOpen]="openMenu === 'image'"
+          (isOpenChange)="onMenuOpenChange('image', $event)"
           (aspectRatioChange)="onImageAspectRatioChange($event)"
           (resolutionChange)="onImageResolutionChange($event)"
           (rotateClockwise)="onImageRotateClockwise()"
@@ -87,12 +90,14 @@
         ></app-image-setting>
 
         <app-model-setting
-          [activeMode]="activeMode"
+
           [maxHands]="maxHands"
           [minDetectionConfidence]="minDetectionConfidence"
           [minPresenceConfidence]="minPresenceConfidence"
           [minTrackingConfidence]="minTrackingConfidence"
           [delegate]="delegate"
+          [isOpen]="openMenu === 'model'"
+          (isOpenChange)="onMenuOpenChange('model', $event)"
           (maxHandsChange)="onMaxHandsChange($event)"
           (minDetectionConfidenceChange)="onMinDetectionConfidenceChange($event)"
           (minPresenceConfidenceChange)="onMinPresenceConfidenceChange($event)"
@@ -111,14 +116,14 @@
       <div class="status-wrapper" *ngIf="!isMenuOpen()">
         <div class="status-card glass">
           <app-model-status
-            [activeMode]="activeMode"
+
             [delegate]="delegate"
             [modelLoadTime]="modelLoadTime"
           ></app-model-status>
 
           <app-video-status
             *ngIf="scanSource === 'webcam'"
-            [activeMode]="activeMode"
+
             [fps]="telemetry.fps"
             [inferenceTime]="telemetry.inferenceTime"
             [doneTime]="telemetry.doneTime"
@@ -135,7 +140,7 @@
             *ngIf="scanSource === 'upload'"
             [metadata]="uploadedMetadata"
             [delegate]="delegate"
-            [activeMode]="activeMode"
+
             [detectedHandsList]="telemetry.detectedHandsList"
           ></app-image-metadata>
         </div>
