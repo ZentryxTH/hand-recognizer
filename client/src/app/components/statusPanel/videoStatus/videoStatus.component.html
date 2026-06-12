@@ -19,7 +19,7 @@
 
 <div class="detail-row" *ngIf="handsDetected > 0">
   <ng-container *ngIf="detectedHandsList && detectedHandsList.length > 0; else legacyBadges">
-    <ng-container *ngFor="let hand of detectedHandsList">
+    <ng-container *ngFor="let hand of detectedHandsList; trackBy: trackByIndex">
       <div class="detail-badge pink-bg">
         <span>{{ hand.handedness }} {{ hand.score }}%</span>
       </div>

@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, Input, Output, EventEmitter } from '@angular/core';
+import { Component, ElementRef, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonItem, IonLabel, IonIcon, IonButton, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -14,28 +14,67 @@ import { cropOutline, closeOutline, arrowRedoOutline, arrowUndoOutline } from 'i
     IonSelect, IonSelectOption
   ]
 })
-export class ImageSettingComponent {
+export class ImageSettingComponent implements OnDestroy {
   @Input() selectedAspectRatio: 'original' | '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = 'original';
   @Input() targetResolution: 'original' | '4k' | '2k' | '1080p' | '720p' | '480p' = '720p';
   @Input() rotationDegrees = 0;
+  private _isOpen = false;
+  private clickListener: ((event: MouseEvent) => void) | null = null;
+
+  @Input()
+  set isOpen(value: boolean) {
+    if (this._isOpen === value) return;
+    this._isOpen = value;
+    if (value) {
+      this.addClickListener();
+    } else {
+      this.removeClickListener();
+    }
+  }
+
+  get isOpen(): boolean {
+    return this._isOpen;
+  }
 
   @Output() aspectRatioChange = new EventEmitter<'original' | '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1'>();
   @Output() resolutionChange = new EventEmitter<'original' | '4k' | '2k' | '1080p' | '720p' | '480p'>();
   @Output() rotateClockwise = new EventEmitter<void>();
   @Output() rotateCounterClockwise = new EventEmitter<void>();
-
-  isOpen = false;
+  @Output() isOpenChange = new EventEmitter<boolean>();
 
   constructor(private elementRef: ElementRef) {
     addIcons({ cropOutline, closeOutline, arrowRedoOutline, arrowUndoOutline });
   }
 
-  togglePanel() {
-    this.isOpen = !this.isOpen;
+  togglePanel(event?: MouseEvent) {
+    event?.stopPropagation();
+    const nextState = !this.isOpen;
+    this.isOpen = nextState;
+    this.isOpenChange.emit(nextState);
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
+  ngOnDestroy() {
+    this.removeClickListener();
+  }
+
+  private addClickListener() {
+    this.removeClickListener();
+    this.clickListener = (e) => this.onDocumentClick(e);
+    setTimeout(() => {
+      if (this.isOpen && this.clickListener) {
+        document.addEventListener('click', this.clickListener);
+      }
+    }, 0);
+  }
+
+  private removeClickListener() {
+    if (this.clickListener) {
+      document.removeEventListener('click', this.clickListener);
+      this.clickListener = null;
+    }
+  }
+
+  private onDocumentClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
     if (!target) return;
 
@@ -46,6 +85,18 @@ export class ImageSettingComponent {
 
     if (this.isOpen && !this.elementRef.nativeElement.contains(target) && !isIonicOverlay) {
       this.isOpen = false;
+      this.isOpenChange.emit(false);
+      this.removeClickListener();
     }
+  }
+
+  onAspectRatioSelect(event: Event) {
+    const customEvent = event as CustomEvent;
+    this.aspectRatioChange.emit(customEvent.detail.value as 'original' | '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1');
+  }
+
+  onResolutionSelect(event: Event) {
+    const customEvent = event as CustomEvent;
+    this.resolutionChange.emit(customEvent.detail.value as 'original' | '4k' | '2k' | '1080p' | '720p' | '480p');
   }
 }

@@ -6,7 +6,7 @@
   <div class="meta-grid">
     <div class="meta-item">
       <span class="meta-label">Format:</span>
-      <span class="meta-value">{{ metadata.type.split('/')[1] | uppercase }}</span>
+      <span class="meta-value">{{ fileFormat }}</span>
     </div>
     <div class="meta-item">
       <span class="meta-label">Original:</span>
@@ -33,7 +33,7 @@
   <div class="predictions-row" *ngIf="detectedHandsList && detectedHandsList.length > 0">
     <div class="predictions-divider">Predictions</div>
     <div class="detail-row">
-      <ng-container *ngFor="let hand of detectedHandsList">
+      <ng-container *ngFor="let hand of detectedHandsList; trackBy: trackByIndex">
         <div class="detail-badge pink-bg">
           <span>{{ hand.handedness }} {{ hand.score }}%</span>
         </div>

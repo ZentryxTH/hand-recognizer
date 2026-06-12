@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { IonSpinner } from '@ionic/angular/standalone';
 import { HandLandmarkerService } from '../../models/handLandmarkers/handLandmarker.service';
 import { GestureRecognizerService } from '../../models/gestureRecognizer/gestureRecognizer.service';
+import { parseAspectRatio, getAspectRatioClass } from '../../utils/aspect-ratio.utils';
+import { drawLandmarks, drawCategoryLabels } from '../../utils/drawing.utils';
+import { TelemetryData, ResolutionInfo } from '../../models/telemetry.interface';
+import { extractHandTelemetry } from '../../utils/telemetry.utils';
 
 @Component({
   selector: 'app-video-panel',
@@ -24,15 +28,16 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() targetResolution: '4k' | '2k' | '1080p' | '720p' | '480p' | 'device' = '1080p'; // Default to 1080p (Full HD)
   @Input() selectedAspectRatio: '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = '16:9';
 
-  @Output() telemetryUpdate = new EventEmitter<any>();
+  @Output() telemetryUpdate = new EventEmitter<TelemetryData>();
   @Output() modelLoaded = new EventEmitter<number>();
   @Output() camerasEnumerated = new EventEmitter<MediaDeviceInfo[]>();
-  @Output() resolutionsDetected = new EventEmitter<any[]>();
+  @Output() resolutionsDetected = new EventEmitter<ResolutionInfo[]>();
 
   @ViewChild('videoElement', { static: true }) videoRef!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasOverlay', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
   isLoading = true;
+  errorMessage: string | null = null;
   availableCameras: MediaDeviceInfo[] = [];
 
   private stream: MediaStream | null = null;
@@ -41,17 +46,12 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   // Inference throttling: ~25 FPS inference, 60 FPS draw
   private minInferenceIntervalMs = 40;
   private lastInferenceTimeMs = 0;
+  private lastTelemetryEmitTimeMs = 0;
+  private lastHandsDetectedCount = 0;
   private cachedResults: any = null;
 
-  // Pre-allocated skeleton connection groups
-  private readonly HAND_CONNECTIONS = [
-    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-    [0, 5], [5, 6], [6, 7], [7, 8], // Index
-    [0, 9], [9, 10], [10, 11], [11, 12], // Middle
-    [0, 13], [13, 14], [14, 15], [15, 16], // Ring
-    [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
-    [5, 9], [9, 13], [13, 17] // MCP bridges
-  ];
+  private pendingCameraLoad: Promise<void> | null = null;
+  private pendingModelLoad: Promise<void> | null = null;
 
   constructor(
     private handService: HandLandmarkerService,
@@ -65,20 +65,22 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
     await this.loadModels();
   }
 
-  async ngOnChanges(changes: SimpleChanges) {
-    const cameraParamsChanged = changes['selectedCameraId'] || changes['isFrontCamera'] || changes['targetResolution'];
-    if (cameraParamsChanged && !cameraParamsChanged.firstChange) {
-      await this.startCamera();
+  ngOnChanges(changes: SimpleChanges) {
+    const cameraKeys = ['selectedCameraId', 'isFrontCamera', 'targetResolution'];
+    const cameraParamsChanged = cameraKeys.some(key => changes[key] && !changes[key].firstChange);
+
+    if (cameraParamsChanged) {
+      this.pendingCameraLoad = (this.pendingCameraLoad || Promise.resolve())
+        .then(() => this.startCamera());
     }
 
-    const modelParamsChanged = changes['maxHands'] || 
-                               changes['minDetectionConfidence'] || 
-                               changes['minPresenceConfidence'] || 
-                               changes['minTrackingConfidence'] || 
-                               changes['delegate'] || 
-                               changes['activeMode'];
-    if (modelParamsChanged && !modelParamsChanged.firstChange) {
-      await this.loadModels();
+    const modelKeys = ['maxHands', 'minDetectionConfidence', 'minPresenceConfidence', 'minTrackingConfidence', 'delegate', 'activeMode'];
+    const modelParamsChanged = modelKeys.some(key => changes[key] && !changes[key].firstChange);
+
+    if (modelParamsChanged) {
+      const onlySlidersChanged = !changes['delegate'] && !changes['activeMode'];
+      this.pendingModelLoad = (this.pendingModelLoad || Promise.resolve())
+        .then(() => this.loadModels(onlySlidersChanged));
     }
   }
 
@@ -100,9 +102,12 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  async loadModels() {
-    this.isLoading = true;
-    this.stopPredictionLoop();
+  async loadModels(onlySliders = false) {
+    this.errorMessage = null;
+    if (!onlySliders) {
+      this.isLoading = true;
+      this.stopPredictionLoop();
+    }
 
     const config = {
       delegate: this.delegate,
@@ -122,16 +127,23 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
         const res = await this.gestureService.initialize(config);
         loadTimeMs = res.loadTimeMs;
       }
-      this.modelLoaded.emit(loadTimeMs);
-      this.startPredictionLoop();
+
+      if (!onlySliders) {
+        this.modelLoaded.emit(loadTimeMs);
+        this.startPredictionLoop();
+      }
     } catch (err) {
       console.error('Failed to configure model options:', err);
+      this.errorMessage = 'Failed to load MediaPipe models. Please check your network connection.';
     } finally {
-      this.isLoading = false;
+      if (!onlySliders) {
+        this.isLoading = false;
+      }
     }
   }
 
   async startCamera() {
+    this.errorMessage = null;
     this.stopCamera();
     try {
       const constraints: any = {
@@ -186,11 +198,11 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
         if (curW > maxW) maxW = curW;
         if (curH > maxH) maxH = curH;
 
-        const list = [
+        const list: ResolutionInfo[] = [
           { label: `Device Default (${curW}x${curH})`, value: 'device', width: curW, height: curH }
         ];
 
-        const standardResolutions = [
+        const standardResolutions: ResolutionInfo[] = [
           { label: '4K (3840x2160)', value: '4k', width: 3840, height: 2160 },
           { label: '2K (2560x1440)', value: '2k', width: 2560, height: 1440 },
           { label: '1080p (Full HD)', value: '1080p', width: 1920, height: 1080 },
@@ -199,7 +211,7 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
         ];
 
         for (const res of standardResolutions) {
-          if (res.width <= maxW && res.height <= maxH) {
+          if (res.width !== undefined && res.height !== undefined && res.width <= maxW && res.height <= maxH) {
             if (res.width !== curW || res.height !== curH) {
               list.push(res);
             }
@@ -210,6 +222,7 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
       }
     } catch (err) {
       console.error('Webcam stream access failed:', err);
+      this.errorMessage = 'Webcam stream access failed. Please ensure camera permissions are granted.';
     }
   }
 
@@ -227,17 +240,19 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
     let frameCount = 0;
     let fps = 0;
 
+    const canvas = this.canvasRef.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     this.ngZone.runOutsideAngular(() => {
       const predict = () => {
         const video = this.videoRef.nativeElement;
-        const canvas = this.canvasRef.nativeElement;
-        const ctx = canvas.getContext('2d');
 
         if (video.paused && !video.ended) {
           video.play().catch(() => {});
         }
 
-        if (ctx && video.readyState >= 2) {
+        if (video.readyState >= 2) {
           const now = performance.now();
           frameCount++;
           if (now - lastTime >= 1000) {
@@ -247,16 +262,7 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
           }
 
           // 1. Calculate cropping dimensions based on the chosen aspect ratio
-          let targetRatio = 16 / 9;
-          switch (this.selectedAspectRatio) {
-            case '16:9': targetRatio = 16 / 9; break;
-            case '9:16': targetRatio = 9 / 16; break;
-            case '4:3': targetRatio = 4 / 3; break;
-            case '3:4': targetRatio = 3 / 4; break;
-            case '5:4': targetRatio = 5 / 4; break;
-            case '4:5': targetRatio = 4 / 5; break;
-            case '1:1': targetRatio = 1 / 1; break;
-          }
+          const targetRatio = parseAspectRatio(this.selectedAspectRatio);
 
           const vidW = video.videoWidth;
           const vidH = video.videoHeight;
@@ -275,7 +281,6 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
           }
 
           // Scale crop region to target limit (720p max height) to minimize prediction latency
-          // Input (FHD) -> 720p -> Model
           let destW = sw;
           let destH = sh;
           const targetHeight = 720;
@@ -290,11 +295,10 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
             canvas.height = destH;
           }
 
-          // 2. Draw cropped video frame onto canvas display at 60 FPS
+          // 2. Draw cropped video frame onto canvas display
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
           ctx.save();
-          // Horizontal mirroring in JS to avoid rendering drawn text backwards!
           if (this.isFrontCamera) {
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
@@ -308,7 +312,6 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
 
             const startInference = performance.now();
 
-            // Inference runs directly on the mirrored and cropped canvas representation (already scaled down to 720p height max)
             if (this.activeMode === 'hand-landmarker') {
               this.cachedResults = this.handService.detectVideoFrame(canvas, startInference);
             } else {
@@ -318,119 +321,57 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
             const inferenceTime = Math.round(performance.now() - startInference);
             const doneTime = Math.round(performance.now() - now);
 
-            this.ngZone.run(() => {
-              this.emitTelemetry(fps, inferenceTime, doneTime, this.cachedResults);
-            });
+            // Throttle telemetry updates to reduce change detection cycles
+            const handsCount = this.cachedResults?.handedness?.length || 0;
+            const handsChanged = handsCount !== this.lastHandsDetectedCount;
+            this.lastHandsDetectedCount = handsCount;
+
+            const shouldEmit = handsChanged || (now - this.lastTelemetryEmitTimeMs >= 200);
+            if (shouldEmit) {
+              this.lastTelemetryEmitTimeMs = now;
+              this.ngZone.run(() => {
+                this.emitTelemetry(fps, inferenceTime, doneTime, this.cachedResults);
+              });
+            }
           }
 
           // 4. Draw landmarks directly on top of the display canvas
           if (this.cachedResults) {
-            this.drawLandmarks(ctx, this.cachedResults, canvas.width, canvas.height);
-            this.drawCategoryLabels(ctx, this.cachedResults, canvas.width, canvas.height);
+            drawLandmarks(ctx, this.cachedResults, canvas.width, canvas.height);
+            drawCategoryLabels(ctx, this.cachedResults, canvas.width, canvas.height, this.activeMode, this.isFrontCamera);
           }
         }
 
-        this.animationFrameId = window.setTimeout(predict, 16) as any;
+        this.animationFrameId = requestAnimationFrame(predict);
       };
 
-      this.animationFrameId = window.setTimeout(predict, 16) as any;
+      this.animationFrameId = requestAnimationFrame(predict);
     });
   }
 
   private stopPredictionLoop() {
     if (this.animationFrameId) {
-      window.clearTimeout(this.animationFrameId);
+      cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
   }
 
-  private drawLandmarks(ctx: CanvasRenderingContext2D, results: any, width: number, height: number) {
-    if (!results.landmarks) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const clientWidth = canvas.clientWidth || width;
-    const scale = width / clientWidth;
-
-    ctx.save();
-    ctx.lineWidth = 1.5 * scale;
-
-    for (const landmarks of results.landmarks) {
-      // Draw skeleton lines using specified HAND_CONNECTIONS in cyan
-      ctx.strokeStyle = '#00f2fe';
-      for (const [start, end] of this.HAND_CONNECTIONS) {
-        if (landmarks[start] && landmarks[end]) {
-          ctx.beginPath();
-          ctx.moveTo(landmarks[start].x * width, landmarks[start].y * height);
-          ctx.lineTo(landmarks[end].x * width, landmarks[end].y * height);
-          ctx.stroke();
-        }
-      }
-
-      // Draw landmark points
-      for (let idx = 0; idx < landmarks.length; idx++) {
-        const lm = landmarks[idx];
-        if (!lm) continue;
-        const x = lm.x * width;
-        const y = lm.y * height;
-
-        if (idx === 0) {
-          ctx.fillStyle = '#a855f7'; // Wrist: purple
-        } else if (idx === 4 || idx === 8 || idx === 12 || idx === 16 || idx === 20) {
-          ctx.fillStyle = '#ff2d55'; // Tips: pink
-        } else {
-          ctx.fillStyle = '#34c759'; // Joints: green
-        }
-
-        ctx.beginPath();
-        ctx.arc(x, y, 3 * scale, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-  }
-
   private emitTelemetry(fps: number, inferenceTime: number, doneTime: number, results: any) {
-    const handsDetected = results?.handedness ? results.handedness.length : 0;
+    const detectedHandsList = extractHandTelemetry(results, this.isFrontCamera);
+    const handsDetected = detectedHandsList.length;
     let label = 'N/A';
     let gesture = 'N/A';
     let gestureScore = 0;
-    const detectedHandsList: any[] = [];
-
-    if (results?.handedness) {
-      for (let i = 0; i < results.handedness.length; i++) {
-        const handData = results.handedness[i][0];
-        let handLabel = handData.categoryName;
-        // Anatomically correct hand swap in front camera mode
-        if (this.isFrontCamera) {
-          handLabel = handLabel === 'Left' ? 'Right' : 'Left';
-        }
-        const score = Math.round(handData.score * 100);
-
-        let gName = 'N/A';
-        let gScore = 0;
-        if (results.gestures && results.gestures[i] && results.gestures[i][0]) {
-          gName = results.gestures[i][0].categoryName;
-          gScore = Math.round(results.gestures[i][0].score * 100);
-        }
-
-        detectedHandsList.push({
-          handedness: handLabel,
-          score,
-          gesture: gName,
-          gestureScore: gScore
-        });
-      }
-    }
-
-    const video = this.videoRef?.nativeElement;
-    const streamWidth = video ? video.videoWidth : 0;
-    const streamHeight = video ? video.videoHeight : 0;
 
     if (detectedHandsList.length > 0) {
       label = detectedHandsList[0].handedness;
       gesture = detectedHandsList[0].gesture;
       gestureScore = detectedHandsList[0].gestureScore;
     }
+
+    const video = this.videoRef?.nativeElement;
+    const streamWidth = video ? video.videoWidth : 0;
+    const streamHeight = video ? video.videoHeight : 0;
 
     this.telemetryUpdate.emit({
       fps,
@@ -447,85 +388,6 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getRatioClass(): string {
-    switch (this.selectedAspectRatio) {
-      case '16:9': return 'ratio-16-9';
-      case '9:16': return 'ratio-9-16';
-      case '4:3': return 'ratio-4-3';
-      case '3:4': return 'ratio-3-4';
-      case '5:4': return 'ratio-5-4';
-      case '4:5': return 'ratio-4-5';
-      case '1:1': return 'ratio-1-1';
-      default: return 'ratio-16-9';
-    }
-  }
-
-  private drawCategoryLabels(ctx: CanvasRenderingContext2D, results: any, width: number, height: number) {
-    if (!results.landmarks || !results.handedness) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const clientWidth = canvas.clientWidth || width;
-    const scale = width / clientWidth;
-    const baseFontSize = clientWidth < 768 ? 16 : 14;
-    const fontSize = Math.round(baseFontSize * scale);
-
-    ctx.save();
-    ctx.textBaseline = 'top';
-
-    for (let i = 0; i < results.landmarks.length; i++) {
-      const landmarks = results.landmarks[i];
-      const handedness = results.handedness[i];
-      const gesture = results.gestures?.[i];
-
-      const wrist = landmarks?.[0];
-      if (!wrist || !handedness) continue;
-
-      // Position text overlay at the wrist (landmark 0)
-      const x = wrist.x * width;
-      const y = (wrist.y * height) + (15 * scale);
-
-      let handLabel = handedness[0].categoryName;
-      // Anatomical flip to align left/right correctly
-      if (this.isFrontCamera) {
-        handLabel = handLabel === 'Left' ? 'RIGHT' : 'LEFT';
-      } else {
-        handLabel = handLabel === 'Left' ? 'LEFT' : 'RIGHT';
-      }
-
-      const score = Math.round(handedness[0].score * 100);
-      let displayText = `${handLabel} ${score}%`;
-      if (this.activeMode === 'gesture-recognizer' && gesture?.[0]) {
-        displayText += ` - ${gesture[0].categoryName} (${Math.round(gesture[0].score * 100)}%)`;
-      }
-
-      ctx.textAlign = 'center';
-      ctx.font = `600 ${fontSize}px "Plus Jakarta Sans", sans-serif`;
-
-      const textHeight = fontSize + (8 * scale);
-      const textWidth = ctx.measureText(displayText).width;
-      ctx.fillStyle = 'rgba(17, 18, 22, 0.9)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.lineWidth = 1 * scale;
-      this.drawRoundedRect(ctx, x - (textWidth / 2) - (8 * scale), y - (4 * scale), textWidth + (16 * scale), textHeight, 4 * scale);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.fillText(displayText, x, y);
-    }
-    ctx.restore();
-  }
-
-  private drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
+    return getAspectRatioClass(this.selectedAspectRatio);
   }
 }

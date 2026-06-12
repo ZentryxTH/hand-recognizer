@@ -5,15 +5,11 @@ import { addIcons } from 'ionicons';
 import { cloudUploadOutline, imageOutline, cropOutline, resizeOutline, arrowRedoOutline, arrowUndoOutline } from 'ionicons/icons';
 import { HandLandmarkerService } from '../../models/handLandmarkers/handLandmarker.service';
 import { GestureRecognizerService } from '../../models/gestureRecognizer/gestureRecognizer.service';
-
-export interface ImageMetadata {
-  name: string;
-  size: string;
-  type: string;
-  originalResolution: string;
-  processedResolution: string;
-  rotation: number;
-}
+import { ImageMetadata } from '../../models/image-metadata.interface';
+import { ImageProcessedData } from '../../models/telemetry.interface';
+import { parseAspectRatio } from '../../utils/aspect-ratio.utils';
+import { drawLandmarks, drawCategoryLabels } from '../../utils/drawing.utils';
+import { extractHandTelemetry } from '../../utils/telemetry.utils';
 
 @Component({
   selector: 'app-image-uploader',
@@ -36,27 +32,19 @@ export class ImageUploaderComponent implements OnChanges {
   @Input() targetResolution: 'original' | '4k' | '2k' | '1080p' | '720p' | '480p' = '720p';
   @Input() rotationDegrees = 0;
 
-  @Output() imageProcessed = new EventEmitter<any>();
-  @Output() metadataExtracted = new EventEmitter<ImageMetadata>();
+  @Output() imageProcessed = new EventEmitter<ImageProcessedData | null>();
+  @Output() metadataExtracted = new EventEmitter<ImageMetadata | null>();
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('canvasOverlay') canvasRef!: ElementRef<HTMLCanvasElement>;
 
   imageSrc: string | null = null;
   isLoading = false;
+  errorMessage: string | null = null;
   metadata: ImageMetadata | null = null;
 
   private loadedImage: HTMLImageElement | null = null;
-
-  // Pre-allocated skeleton connection groups
-  private readonly HAND_CONNECTIONS = [
-    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-    [0, 5], [5, 6], [6, 7], [7, 8], // Index
-    [0, 9], [9, 10], [10, 11], [11, 12], // Middle
-    [0, 13], [13, 14], [14, 15], [15, 16], // Ring
-    [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
-    [5, 9], [9, 13], [13, 17] // MCP bridges
-  ];
+  private currentFile: File | null = null;
 
   constructor(
     private handService: HandLandmarkerService,
@@ -66,18 +54,20 @@ export class ImageUploaderComponent implements OnChanges {
   }
 
   async ngOnChanges(changes: SimpleChanges) {
-    if (this.loadedImage && (
-      changes['selectedAspectRatio'] ||
-      changes['targetResolution'] ||
-      changes['rotationDegrees'] ||
-      changes['activeMode'] ||
-      changes['maxHands'] ||
-      changes['minDetectionConfidence'] ||
-      changes['minPresenceConfidence'] ||
-      changes['minTrackingConfidence'] ||
-      changes['delegate']
-    )) {
-      await this.applyImageSettingsAndProcess();
+    if (!this.loadedImage) return;
+
+    const keys = [
+      'selectedAspectRatio', 'targetResolution', 'rotationDegrees',
+      'activeMode', 'maxHands', 'minDetectionConfidence',
+      'minPresenceConfidence', 'minTrackingConfidence', 'delegate'
+    ];
+    const anyChanged = keys.some(key => changes[key] && !changes[key].firstChange);
+
+    if (anyChanged) {
+      const modelKeys = ['activeMode', 'maxHands', 'minDetectionConfidence', 'minPresenceConfidence', 'minTrackingConfidence', 'delegate'];
+      const modelChanged = modelKeys.some(key => changes[key] && !changes[key].firstChange);
+      
+      await this.applyImageSettingsAndProcess(modelChanged);
     }
   }
 
@@ -85,32 +75,49 @@ export class ImageUploaderComponent implements OnChanges {
     this.fileInput.nativeElement.click();
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
+    this.currentFile = file;
+    input.value = ''; // Reset input to allow re-selecting the same file
     this.isLoading = true;
-    const reader = new FileReader();
+    this.errorMessage = null;
 
-    reader.onload = (e: any) => {
-      this.imageSrc = e.target.result;
+    const reader = new FileReader();
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      if (!e.target?.result) {
+        this.isLoading = false;
+        return;
+      }
+      this.imageSrc = e.target.result as string;
 
       const img = new Image();
       img.onload = () => {
         this.loadedImage = img;
-        this.applyImageSettingsAndProcess();
+        this.applyImageSettingsAndProcess(true);
       };
-      img.src = e.target.result;
+      img.onerror = () => {
+        this.isLoading = false;
+        this.errorMessage = 'Failed to load the image. Please try another file.';
+      };
+      img.src = e.target.result as string;
+    };
+    reader.onerror = () => {
+      this.isLoading = false;
+      this.errorMessage = 'Failed to read the image file.';
     };
     reader.readAsDataURL(file);
   }
 
-  private async applyImageSettingsAndProcess() {
+  private async applyImageSettingsAndProcess(forceModelInit = true) {
     if (!this.loadedImage || !this.imageSrc) return;
 
     this.isLoading = true;
+    this.errorMessage = null;
     const img = this.loadedImage;
-    const file = this.fileInput.nativeElement.files?.[0];
+    const file = this.currentFile;
     const fileSizeStr = file ? this.formatBytes(file.size) : 'Unknown size';
     const fileType = file ? file.type : 'image/jpeg';
     const fileName = file ? file.name : 'upload.jpg';
@@ -147,14 +154,7 @@ export class ImageUploaderComponent implements OnChanges {
     let sx = 0, sy = 0, sw = rotW, sh = rotH;
 
     if (this.selectedAspectRatio !== 'original') {
-      let targetRatio = 1;
-      if (this.selectedAspectRatio === '16:9') targetRatio = 16 / 9;
-      else if (this.selectedAspectRatio === '9:16') targetRatio = 9 / 16;
-      else if (this.selectedAspectRatio === '4:3') targetRatio = 4 / 3;
-      else if (this.selectedAspectRatio === '3:4') targetRatio = 3 / 4;
-      else if (this.selectedAspectRatio === '5:4') targetRatio = 5 / 4;
-      else if (this.selectedAspectRatio === '4:5') targetRatio = 4 / 5;
-      else if (this.selectedAspectRatio === '1:1') targetRatio = 1;
+      const targetRatio = parseAspectRatio(this.selectedAspectRatio);
 
       const rotRatio = rotW / rotH;
       if (rotRatio > targetRatio) {
@@ -196,6 +196,10 @@ export class ImageUploaderComponent implements OnChanges {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(tempCanvas, sx, sy, sw, sh, 0, 0, targetW, targetH);
 
+    // Clean up temp canvas backing store to prevent memory leaks
+    tempCanvas.width = 0;
+    tempCanvas.height = 0;
+
     // 5. Update Metadata representation
     this.metadata = {
       name: fileName,
@@ -222,48 +226,28 @@ export class ImageUploaderComponent implements OnChanges {
       const startTime = performance.now();
 
       if (this.activeMode === 'hand-landmarker') {
-        const { landmarker } = await this.handService.initialize(config);
-        if (landmarker) {
-          results = this.handService.detectImage(canvas);
+        if (forceModelInit) {
+          await this.handService.initialize(config);
         }
+        results = this.handService.detectImage(canvas);
       } else {
-        const { recognizer } = await this.gestureService.initialize(config);
-        if (recognizer) {
-          results = this.gestureService.recognizeImage(canvas);
+        if (forceModelInit) {
+          await this.gestureService.initialize(config);
         }
+        results = this.gestureService.recognizeImage(canvas);
       }
 
       const inferenceTime = Math.round(performance.now() - startTime);
 
       if (results) {
-        this.drawLandmarks(ctx, results, canvas.width, canvas.height);
-        this.drawCategoryLabels(ctx, results, canvas.width, canvas.height);
+        drawLandmarks(ctx, results, canvas.width, canvas.height);
+        drawCategoryLabels(ctx, results, canvas.width, canvas.height, this.activeMode, false);
 
+        const detectedHandsList = extractHandTelemetry(results, false);
+        const handsDetected = detectedHandsList.length;
         let label = 'N/A';
         let gesture = 'N/A';
         let gestureScore = 0;
-        const detectedHandsList: any[] = [];
-        if (results.handedness) {
-          for (let i = 0; i < results.handedness.length; i++) {
-            const handData = results.handedness[i][0];
-            const handLabel = handData.categoryName === 'Left' ? 'LEFT' : 'RIGHT';
-            const score = Math.round(handData.score * 100);
-
-            let gName = 'N/A';
-            let gScore = 0;
-            if (results.gestures && results.gestures[i] && results.gestures[i][0]) {
-              gName = results.gestures[i][0].categoryName;
-              gScore = Math.round(results.gestures[i][0].score * 100);
-            }
-
-            detectedHandsList.push({
-              handedness: handLabel,
-              score,
-              gesture: gName,
-              gestureScore: gScore
-            });
-          }
-        }
 
         if (detectedHandsList.length > 0) {
           label = detectedHandsList[0].handedness;
@@ -273,71 +257,29 @@ export class ImageUploaderComponent implements OnChanges {
 
         this.imageProcessed.emit({
           inferenceTime,
-          handsDetected: results.landmarks ? results.landmarks.length : 0,
+          handsDetected,
           handedness: label,
           gesture,
           gestureScore,
           detectedHandsList
         });
+      } else {
+        this.errorMessage = 'Failed to analyze the image using MediaPipe.';
       }
     } catch (err) {
       console.error('Static canvas image inference failure:', err);
+      this.errorMessage = 'Static canvas image inference failure. Please check the model files or browser capabilities.';
     } finally {
       this.isLoading = false;
     }
-  }
-
-  private drawLandmarks(ctx: CanvasRenderingContext2D, results: any, width: number, height: number) {
-    if (!results.landmarks) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const clientWidth = canvas.clientWidth || width;
-    const scale = width / clientWidth;
-
-    ctx.save();
-    ctx.lineWidth = 1.5 * scale;
-
-    for (const landmarks of results.landmarks) {
-      // Draw skeleton lines using specified HAND_CONNECTIONS in cyan
-      ctx.strokeStyle = '#00f2fe';
-      for (const [start, end] of this.HAND_CONNECTIONS) {
-        if (landmarks[start] && landmarks[end]) {
-          ctx.beginPath();
-          ctx.moveTo(landmarks[start].x * width, landmarks[start].y * height);
-          ctx.lineTo(landmarks[end].x * width, landmarks[end].y * height);
-          ctx.stroke();
-        }
-      }
-
-      // Draw landmark points
-      for (let idx = 0; idx < landmarks.length; idx++) {
-        const lm = landmarks[idx];
-        if (!lm) continue;
-        const x = lm.x * width;
-        const y = lm.y * height;
-
-        if (idx === 0) {
-          ctx.fillStyle = '#a855f7'; // Wrist: purple
-        } else if (idx === 4 || idx === 8 || idx === 12 || idx === 16 || idx === 20) {
-          ctx.fillStyle = '#ff2d55'; // Tips: pink
-        } else {
-          ctx.fillStyle = '#34c759'; // Joints: green
-        }
-
-        ctx.beginPath();
-        ctx.arc(x, y, 3 * scale, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
   }
 
   private formatBytes(bytes: number, decimals = 2): string {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
 
@@ -345,70 +287,9 @@ export class ImageUploaderComponent implements OnChanges {
     this.imageSrc = null;
     this.metadata = null;
     this.loadedImage = null;
-    this.metadataExtracted.emit(null as any);
+    this.currentFile = null;
+    this.errorMessage = null;
+    this.metadataExtracted.emit(null);
     this.imageProcessed.emit(null);
-  }
-
-  private drawCategoryLabels(ctx: CanvasRenderingContext2D, results: any, width: number, height: number) {
-    if (!results.landmarks || !results.handedness) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const clientWidth = canvas.clientWidth || width;
-    const scale = width / clientWidth;
-    const baseFontSize = clientWidth < 768 ? 16 : 14;
-    const fontSize = Math.round(baseFontSize * scale);
-
-    ctx.save();
-    ctx.textBaseline = 'top';
-
-    for (let i = 0; i < results.landmarks.length; i++) {
-      const landmarks = results.landmarks[i];
-      const handedness = results.handedness[i];
-      const gesture = results.gestures?.[i];
-
-      const wrist = landmarks?.[0];
-      if (!wrist || !handedness) continue;
-
-      // Position text overlay at the wrist (landmark 0)
-      const x = wrist.x * width;
-      const y = (wrist.y * height) + (15 * scale);
-
-      const handLabel = handedness[0].categoryName === 'Left' ? 'LEFT' : 'RIGHT';
-      const score = Math.round(handedness[0].score * 100);
-      let displayText = `${handLabel} ${score}%`;
-      if (this.activeMode === 'gesture-recognizer' && gesture?.[0]) {
-        displayText += ` - ${gesture[0].categoryName} (${Math.round(gesture[0].score * 100)}%)`;
-      }
-
-      ctx.textAlign = 'center';
-      ctx.font = `600 ${fontSize}px "Plus Jakarta Sans", sans-serif`;
-
-      const textHeight = fontSize + (8 * scale);
-      const textWidth = ctx.measureText(displayText).width;
-      ctx.fillStyle = 'rgba(17, 18, 22, 0.9)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.lineWidth = 1 * scale;
-      this.drawRoundedRect(ctx, x - (textWidth / 2) - (8 * scale), y - (4 * scale), textWidth + (16 * scale), textHeight, 4 * scale);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.fillText(displayText, x, y);
-    }
-    ctx.restore();
-  }
-
-  private drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
   }
 }

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.example.app',
-  appName: 'client',
+  appId: 'com.handrecognizer.app',
+  appName: 'Hand Recognizer',
   webDir: 'www'
 };
 

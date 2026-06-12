@@ -1,5 +1,5 @@
 <div class="uploader-container glass">
-  <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+  <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;" aria-label="Upload image">
 
   <!-- Upload Drop Zone -->
   <div class="drop-zone" *ngIf="!imageSrc" (click)="triggerSelect()">
@@ -22,11 +22,16 @@
     <div class="canvas-wrapper">
       <canvas #canvasOverlay class="canvas-display"></canvas>
 
-      <div class="loader-overlay" *ngIf="isLoading">
+      <div class="loader-overlay" *ngIf="isLoading && !errorMessage">
         <ion-spinner name="crescent" color="light"></ion-spinner>
         <p>Analyzing Image Landmarks...</p>
       </div>
     </div>
+  </div>
+
+  <!-- Error Banner -->
+  <div class="error-banner" *ngIf="errorMessage">
+    <p>{{ errorMessage }}</p>
   </div>
 
   <!-- Remove Button -->

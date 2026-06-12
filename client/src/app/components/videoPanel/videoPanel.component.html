@@ -1,9 +1,13 @@
 <div class="video-container" [ngClass]="[getRatioClass(), isFrontCamera ? 'mirrored' : '']">
-  <video #videoElement autoplay playsinline muted></video>
-  <canvas #canvasOverlay class="canvas-overlay"></canvas>
+  <video #videoElement autoplay playsinline muted aria-hidden="true"></video>
+  <canvas #canvasOverlay class="canvas-overlay" role="img" aria-label="Webcam feed with hand landmarker tracking overlay"></canvas>
 
-  <div class="camera-loader" *ngIf="isLoading">
+  <div class="camera-loader" *ngIf="isLoading && !errorMessage">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
     <p class="loader-text">Loading MediaPipe Models ({{ delegate }})...</p>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">
+    <p>{{ errorMessage }}</p>
   </div>
 </div>
