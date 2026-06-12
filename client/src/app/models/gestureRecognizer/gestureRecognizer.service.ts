@@ -48,7 +48,7 @@ export class GestureRecognizerService {
 
       this.recognizer = await GestureRecognizer.createFromOptions(this.visionTasksResolver, {
         baseOptions: {
-          modelAssetPath: 'assets/models/gesture_recognizer.task',
+          modelAssetPath: 'assets/models/mediapipe/gesture_recognizer.task',
           delegate: config.delegate
         },
         runningMode: this.currentRunningMode,

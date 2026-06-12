@@ -50,7 +50,7 @@ export class HandLandmarkerService {
 
       this.landmarker = await HandLandmarker.createFromOptions(this.visionTasksResolver, {
         baseOptions: {
-          modelAssetPath: 'assets/models/hand_landmarker.task',
+          modelAssetPath: 'assets/models/mediapipe/hand_landmarker.task',
           delegate: config.delegate
         },
         runningMode: this.currentRunningMode,
