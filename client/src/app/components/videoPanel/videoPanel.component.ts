@@ -132,7 +132,7 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
         this.startPredictionLoop();
         setTimeout(() => {
           this.loadSuccessMessage = false;
-        }, 1500);
+        }, 1000);
       }
     } catch (err) {
       console.error('Failed to configure model options:', err);
