@@ -83,7 +83,6 @@ export function drawCategoryLabels(
   results: any,
   width: number,
   height: number,
-  activeMode: 'hand-landmarker' | 'gesture-recognizer',
   isFrontCamera: boolean = false,
   clientWidthVal?: number
 ) {
@@ -119,7 +118,7 @@ export function drawCategoryLabels(
 
     const score = Math.round(handedness[0].score * 100);
     let displayText = `${handLabel} ${score}%`;
-    if (activeMode === 'gesture-recognizer' && gesture?.[0]) {
+    if (gesture?.[0]) {
       displayText += ` - ${gesture[0].categoryName} (${Math.round(gesture[0].score * 100)}%)`;
     }
 

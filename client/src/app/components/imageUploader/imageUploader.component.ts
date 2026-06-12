@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { IonButton, IonIcon, IonSpinner, IonLabel } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { cloudUploadOutline, imageOutline, cropOutline, resizeOutline, arrowRedoOutline, arrowUndoOutline } from 'ionicons/icons';
-import { HandLandmarkerService } from '../../models/handLandmarkers/handLandmarker.service';
 import { GestureRecognizerService } from '../../models/gestureRecognizer/gestureRecognizer.service';
 import { ImageMetadata } from '../../models/image-metadata.interface';
 import { ImageProcessedData } from '../../models/telemetry.interface';
@@ -21,7 +20,7 @@ import { extractHandTelemetry } from '../../utils/telemetry.utils';
   ]
 })
 export class ImageUploaderComponent implements OnChanges {
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() maxHands = 2;
   @Input() minDetectionConfidence = 0.5;
   @Input() minPresenceConfidence = 0.5;
@@ -47,7 +46,6 @@ export class ImageUploaderComponent implements OnChanges {
   private currentFile: File | null = null;
 
   constructor(
-    private handService: HandLandmarkerService,
     private gestureService: GestureRecognizerService
   ) {
     addIcons({ cloudUploadOutline, imageOutline, cropOutline, resizeOutline, arrowRedoOutline, arrowUndoOutline });
@@ -58,13 +56,13 @@ export class ImageUploaderComponent implements OnChanges {
 
     const keys = [
       'selectedAspectRatio', 'targetResolution', 'rotationDegrees',
-      'activeMode', 'maxHands', 'minDetectionConfidence',
+      'maxHands', 'minDetectionConfidence',
       'minPresenceConfidence', 'minTrackingConfidence', 'delegate'
     ];
     const anyChanged = keys.some(key => changes[key] && !changes[key].firstChange);
 
     if (anyChanged) {
-      const modelKeys = ['activeMode', 'maxHands', 'minDetectionConfidence', 'minPresenceConfidence', 'minTrackingConfidence', 'delegate'];
+      const modelKeys = ['maxHands', 'minDetectionConfidence', 'minPresenceConfidence', 'minTrackingConfidence', 'delegate'];
       const modelChanged = modelKeys.some(key => changes[key] && !changes[key].firstChange);
       
       await this.applyImageSettingsAndProcess(modelChanged);
@@ -225,23 +223,16 @@ export class ImageUploaderComponent implements OnChanges {
       let results: any = null;
       const startTime = performance.now();
 
-      if (this.activeMode === 'hand-landmarker') {
-        if (forceModelInit) {
-          await this.handService.initialize(config);
-        }
-        results = this.handService.detectImage(canvas);
-      } else {
-        if (forceModelInit) {
-          await this.gestureService.initialize(config);
-        }
-        results = this.gestureService.recognizeImage(canvas);
+      if (forceModelInit) {
+        await this.gestureService.initialize(config);
       }
+      results = this.gestureService.recognizeImage(canvas);
 
       const inferenceTime = Math.round(performance.now() - startTime);
 
       if (results) {
         drawLandmarks(ctx, results, canvas.width, canvas.height);
-        drawCategoryLabels(ctx, results, canvas.width, canvas.height, this.activeMode, false);
+        drawCategoryLabels(ctx, results, canvas.width, canvas.height, false);
 
         const detectedHandsList = extractHandTelemetry(results, false);
         const handsDetected = detectedHandsList.length;

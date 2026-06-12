@@ -15,7 +15,7 @@ import { sparklesOutline, closeOutline } from 'ionicons/icons';
   ]
 })
 export class ModelSettingComponent implements OnDestroy {
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() maxHands = 2;
   @Input() minDetectionConfidence = 0.5;
   @Input() minPresenceConfidence = 0.5;

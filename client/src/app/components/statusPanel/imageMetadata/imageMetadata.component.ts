@@ -16,7 +16,7 @@ import { DetectedHand } from '../../../models/telemetry.interface';
 export class ImageMetadataComponent {
   @Input() metadata: ImageMetadata | null = null;
   @Input() delegate: 'GPU' | 'CPU' = 'GPU';
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() detectedHandsList: DetectedHand[] = [];
 
   constructor() {

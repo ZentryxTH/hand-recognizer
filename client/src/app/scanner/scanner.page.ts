@@ -1,7 +1,6 @@
 import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonHeader, IonToolbar, IonContent, IonSegment, IonSegmentButton, IonLabel } from '@ionic/angular/standalone';
-import { ModelSegmentsComponent } from '../components/modelSegments/modelSegments.component';
 import { VideoPanelComponent } from '../components/videoPanel/videoPanel.component';
 import { ModelStatusComponent } from '../components/statusPanel/modelStatus/modelStatus.component';
 import { VideoStatusComponent } from '../components/statusPanel/videoStatus/videoStatus.component';
@@ -27,7 +26,6 @@ import { TelemetryData, ResolutionInfo, ImageProcessedData } from '../models/tel
     IonSegment,
     IonSegmentButton,
     IonLabel,
-    ModelSegmentsComponent,
     VideoPanelComponent,
     ModelStatusComponent,
     VideoStatusComponent,
@@ -44,7 +42,6 @@ export class ScannerPage implements OnInit, OnDestroy {
   @ViewChild(ImageUploaderComponent) imageUploader!: ImageUploaderComponent;
 
   // Active configurations
-  activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
   scanSource: 'webcam' | 'upload' = 'webcam';
 
   // Model parameters (expanded to support all confidence levels)
@@ -142,9 +139,6 @@ export class ScannerPage implements OnInit, OnDestroy {
     if (savedMinTrack) this.minTrackingConfidence = parseFloat(savedMinTrack);
   }
 
-  onSegmentChange(event: any) {
-    this.activeMode = event;
-  }
 
   onSourceChange(event: any) {
     this.scanSource = event.detail.value;

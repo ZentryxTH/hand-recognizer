@@ -23,7 +23,7 @@
       <div class="detail-badge pink-bg">
         <span>{{ hand.handedness }} {{ hand.score }}%</span>
       </div>
-      <div class="detail-badge cyan-bg" *ngIf="activeMode === 'gesture-recognizer' && hand.gesture !== 'N/A' && hand.gesture !== 'None'">
+      <div class="detail-badge cyan-bg" *ngIf="hand.gesture !== 'N/A' && hand.gesture !== 'None'">
         <span>{{ hand.gesture }} ({{ hand.gestureScore }}%)</span>
       </div>
     </ng-container>
@@ -32,7 +32,7 @@
     <div class="detail-badge pink-bg">
       <span>Hand: {{ handedness }} ({{ handsDetected }} detected)</span>
     </div>
-    <div class="detail-badge cyan-bg" *ngIf="activeMode === 'gesture-recognizer'">
+    <div class="detail-badge cyan-bg">
       <span>{{ gesture }} ({{ gestureScore }}%)</span>
     </div>
   </ng-template>

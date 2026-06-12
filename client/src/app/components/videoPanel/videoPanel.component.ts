@@ -1,7 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, OnChanges, SimpleChanges, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonSpinner } from '@ionic/angular/standalone';
-import { HandLandmarkerService } from '../../models/handLandmarkers/handLandmarker.service';
 import { GestureRecognizerService } from '../../models/gestureRecognizer/gestureRecognizer.service';
 import { parseAspectRatio, getAspectRatioClass } from '../../utils/aspect-ratio.utils';
 import { drawLandmarks, drawCategoryLabels } from '../../utils/drawing.utils';
@@ -16,7 +15,7 @@ import { extractHandTelemetry } from '../../utils/telemetry.utils';
   imports: [CommonModule, IonSpinner]
 })
 export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() maxHands = 2;
   @Input() minDetectionConfidence = 0.5;
   @Input() minPresenceConfidence = 0.5;
@@ -54,7 +53,6 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   private pendingModelLoad: Promise<void> | null = null;
 
   constructor(
-    private handService: HandLandmarkerService,
     private gestureService: GestureRecognizerService,
     private ngZone: NgZone
   ) {}
@@ -74,11 +72,11 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
         .then(() => this.startCamera());
     }
 
-    const modelKeys = ['maxHands', 'minDetectionConfidence', 'minPresenceConfidence', 'minTrackingConfidence', 'delegate', 'activeMode'];
+    const modelKeys = ['maxHands', 'minDetectionConfidence', 'minPresenceConfidence', 'minTrackingConfidence', 'delegate'];
     const modelParamsChanged = modelKeys.some(key => changes[key] && !changes[key].firstChange);
 
     if (modelParamsChanged) {
-      const onlySlidersChanged = !changes['delegate'] && !changes['activeMode'];
+      const onlySlidersChanged = !changes['delegate'];
       this.pendingModelLoad = (this.pendingModelLoad || Promise.resolve())
         .then(() => this.loadModels(onlySlidersChanged));
     }
@@ -87,7 +85,6 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy() {
     this.stopCamera();
     this.stopPredictionLoop();
-    this.handService.close();
     this.gestureService.close();
   }
 
@@ -120,13 +117,8 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       let loadTimeMs = 0;
-      if (this.activeMode === 'hand-landmarker') {
-        const res = await this.handService.initialize(config);
-        loadTimeMs = res.loadTimeMs;
-      } else {
-        const res = await this.gestureService.initialize(config);
-        loadTimeMs = res.loadTimeMs;
-      }
+      const res = await this.gestureService.initialize(config);
+      loadTimeMs = res.loadTimeMs;
 
       if (!onlySliders) {
         this.modelLoaded.emit(loadTimeMs);
@@ -312,11 +304,7 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
 
             const startInference = performance.now();
 
-            if (this.activeMode === 'hand-landmarker') {
-              this.cachedResults = this.handService.detectVideoFrame(canvas, startInference);
-            } else {
-              this.cachedResults = this.gestureService.recognizeVideoFrame(canvas, startInference);
-            }
+            this.cachedResults = this.gestureService.recognizeVideoFrame(canvas, startInference);
 
             const inferenceTime = Math.round(performance.now() - startInference);
             const doneTime = Math.round(performance.now() - now);
@@ -338,7 +326,7 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
           // 4. Draw landmarks directly on top of the display canvas
           if (this.cachedResults) {
             drawLandmarks(ctx, this.cachedResults, canvas.width, canvas.height);
-            drawCategoryLabels(ctx, this.cachedResults, canvas.width, canvas.height, this.activeMode, this.isFrontCamera);
+            drawCategoryLabels(ctx, this.cachedResults, canvas.width, canvas.height, this.isFrontCamera);
           }
         }
 

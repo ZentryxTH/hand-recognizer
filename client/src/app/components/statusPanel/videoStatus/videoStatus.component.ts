@@ -10,7 +10,7 @@ import { DetectedHand } from '../../../models/telemetry.interface';
   imports: [CommonModule]
 })
 export class VideoStatusComponent {
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() fps = 0;
   @Input() inferenceTime = 0;
   @Input() doneTime = 0;

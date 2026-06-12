@@ -1,7 +1,4 @@
 <ion-header class="ion-no-border">
-  <div class="header-segment-wrapper">
-    <app-model-segments [activeMode]="activeMode" (modeChange)="onSegmentChange($event)"></app-model-segments>
-  </div>
 
   <ion-toolbar class="source-toolbar">
     <ion-segment [value]="scanSource" (ionChange)="onSourceChange($event)">
@@ -25,7 +22,7 @@
       <div class="media-wrapper">
         <app-video-panel
           *ngIf="scanSource === 'webcam'"
-          [activeMode]="activeMode"
+
           [maxHands]="maxHands"
           [minDetectionConfidence]="minDetectionConfidence"
           [minPresenceConfidence]="minPresenceConfidence"
@@ -43,7 +40,7 @@
 
         <app-image-uploader
           *ngIf="scanSource === 'upload'"
-          [activeMode]="activeMode"
+
           [maxHands]="maxHands"
           [minDetectionConfidence]="minDetectionConfidence"
           [minPresenceConfidence]="minPresenceConfidence"
@@ -93,7 +90,7 @@
         ></app-image-setting>
 
         <app-model-setting
-          [activeMode]="activeMode"
+
           [maxHands]="maxHands"
           [minDetectionConfidence]="minDetectionConfidence"
           [minPresenceConfidence]="minPresenceConfidence"
@@ -119,14 +116,14 @@
       <div class="status-wrapper" *ngIf="!isMenuOpen()">
         <div class="status-card glass">
           <app-model-status
-            [activeMode]="activeMode"
+
             [delegate]="delegate"
             [modelLoadTime]="modelLoadTime"
           ></app-model-status>
 
           <app-video-status
             *ngIf="scanSource === 'webcam'"
-            [activeMode]="activeMode"
+
             [fps]="telemetry.fps"
             [inferenceTime]="telemetry.inferenceTime"
             [doneTime]="telemetry.doneTime"
@@ -143,7 +140,7 @@
             *ngIf="scanSource === 'upload'"
             [metadata]="uploadedMetadata"
             [delegate]="delegate"
-            [activeMode]="activeMode"
+
             [detectedHandsList]="telemetry.detectedHandsList"
           ></app-image-metadata>
         </div>

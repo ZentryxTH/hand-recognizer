@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule]
 })
 export class ModelStatusComponent {
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
+
   @Input() delegate: 'GPU' | 'CPU' = 'GPU';
   @Input() modelLoadTime: number | null = null;
 }
