@@ -36,6 +36,8 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   @ViewChild('canvasOverlay', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
   isLoading = true;
+  loadSuccessMessage = false;
+  loadTimeMs = 0;
   errorMessage: string | null = null;
   availableCameras: MediaDeviceInfo[] = [];
 
@@ -123,16 +125,18 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
       loadTimeMs = res.loadTimeMs;
 
       if (!onlySliders) {
+        this.loadTimeMs = loadTimeMs;
+        this.isLoading = false;
+        this.loadSuccessMessage = true;
         this.modelLoaded.emit(loadTimeMs);
         this.startPredictionLoop();
+        setTimeout(() => {
+          this.loadSuccessMessage = false;
+        }, 1500);
       }
     } catch (err) {
       console.error('Failed to configure model options:', err);
       this.errorMessage = 'Failed to load MediaPipe models. Please check your network connection.';
-    } finally {
-      if (!onlySliders) {
-        this.isLoading = false;
-      }
     }
   }
 

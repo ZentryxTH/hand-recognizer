@@ -7,9 +7,16 @@
     <span class="caution-text">{{ currentFrameErrorMessage }}</span>
   </div>
 
-  <div class="camera-loader" *ngIf="isLoading && !errorMessage">
-    <ion-spinner name="crescent" color="primary"></ion-spinner>
-    <p class="loader-text">Loading MediaPipe Models ({{ delegate }})...</p>
+  <div class="camera-loader" *ngIf="(isLoading || loadSuccessMessage) && !errorMessage" [class.success-state]="loadSuccessMessage">
+    <div class="custom-spinner" *ngIf="isLoading"></div>
+    <div class="success-check" *ngIf="loadSuccessMessage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <p class="loader-text">
+      {{ loadSuccessMessage ? 'Model Loaded in ' + loadTimeMs + 'ms' : 'Loading Model...' }}
+    </p>
   </div>
 
   <div class="error-banner" *ngIf="errorMessage">
