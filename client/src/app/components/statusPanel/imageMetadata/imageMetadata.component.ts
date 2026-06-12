@@ -3,15 +3,8 @@ import { CommonModule } from '@angular/common';
 import { IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { imageOutline } from 'ionicons/icons';
-
-export interface ImageMeta {
-  name: string;
-  size: string;
-  type: string;
-  originalResolution: string;
-  processedResolution: string;
-  rotation: number;
-}
+import { ImageMetadata } from '../../../models/image-metadata.interface';
+import { DetectedHand } from '../../../models/telemetry.interface';
 
 @Component({
   selector: 'app-image-metadata',
@@ -21,12 +14,20 @@ export interface ImageMeta {
   imports: [CommonModule, IonIcon]
 })
 export class ImageMetadataComponent {
-  @Input() metadata: ImageMeta | null = null;
+  @Input() metadata: ImageMetadata | null = null;
   @Input() delegate: 'GPU' | 'CPU' = 'GPU';
-  @Input() activeMode: 'hand-landmarker' | 'gesture-recognizer' = 'hand-landmarker';
-  @Input() detectedHandsList: Array<{ handedness: string, score: number, gesture: string, gestureScore: number }> = [];
+
+  @Input() detectedHandsList: DetectedHand[] = [];
 
   constructor() {
     addIcons({ imageOutline });
+  }
+
+  get fileFormat(): string {
+    return this.metadata?.type?.split('/')[1]?.toUpperCase() ?? 'UNKNOWN';
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 }

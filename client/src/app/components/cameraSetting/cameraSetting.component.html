@@ -1,5 +1,5 @@
 <div class="settings-trigger">
-  <ion-button fill="clear" (click)="togglePanel(); $event.stopPropagation()">
+  <ion-button fill="clear" (click)="togglePanel($event)">
     <ion-icon slot="icon-only" name="videocam-outline"></ion-icon>
   </ion-button>
 </div>
@@ -7,7 +7,7 @@
 <div class="settings-overlay glass scrollable" *ngIf="isOpen" (click)="$event.stopPropagation()">
   <div class="settings-header">
     <h3>Camera Source</h3>
-    <ion-button fill="clear" color="light" (click)="togglePanel()">
+    <ion-button fill="clear" color="light" (click)="togglePanel($event)">
       <ion-icon slot="icon-only" name="close-outline"></ion-icon>
     </ion-button>
   </div>
@@ -18,7 +18,7 @@
       <ion-item class="bg-transparent text-white">
         <ion-select [value]="selectedCameraId || 'default'" (ionChange)="onCameraSelect($event)" interface="popover">
           <ion-select-option value="default">Default Direction</ion-select-option>
-          <ion-select-option *ngFor="let cam of cameras" [value]="cam.deviceId">
+          <ion-select-option *ngFor="let cam of cameras; trackBy: trackByCameraId" [value]="cam.deviceId">
             {{ cam.label || 'Webcam ' + cam.deviceId.substring(0, 5) }}
           </ion-select-option>
         </ion-select>
