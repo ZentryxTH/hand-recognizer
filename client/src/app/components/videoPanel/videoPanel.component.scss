@@ -57,22 +57,34 @@
 
   .frame-caution-overlay {
     position: absolute;
-    bottom: 32px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(239, 68, 68, 0.95);
-    color: #ffffff;
-    padding: 10px 24px;
-    border-radius: 24px;
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: 0.5px;
+    background: rgba(17, 18, 22, 0.95);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.2px;
     z-index: 20;
-    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
     pointer-events: none;
-    text-transform: uppercase;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .warning-dot {
+      width: 6px;
+      height: 6px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
   }
 }
 

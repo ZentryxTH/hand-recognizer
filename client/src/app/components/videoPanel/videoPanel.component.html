@@ -3,7 +3,8 @@
   <canvas #canvasOverlay class="canvas-overlay" role="img" aria-label="Webcam feed with hand landmarker tracking overlay"></canvas>
 
   <div class="frame-caution-overlay" *ngIf="currentFrameStatus === 'error' && currentFrameErrorMessage">
-    {{ currentFrameErrorMessage }}
+    <span class="warning-dot"></span>
+    <span class="caution-text">{{ currentFrameErrorMessage }}</span>
   </div>
 
   <div class="camera-loader" *ngIf="isLoading && !errorMessage">

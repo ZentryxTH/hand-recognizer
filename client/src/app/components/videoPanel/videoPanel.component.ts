@@ -366,13 +366,13 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
       } else {
         this.currentFrameStatus = 'error';
         if (!hand.isFullyInFrame) {
-          this.currentFrameErrorMessage = '⚠️ CUT OFF';
+          this.currentFrameErrorMessage = 'Cut off';
         } else if (hand.sizeRatio !== undefined && hand.sizeRatio < 10) {
-          this.currentFrameErrorMessage = '⚠️ TOO FAR';
+          this.currentFrameErrorMessage = 'Too far';
         } else if (hand.sizeRatio !== undefined && hand.sizeRatio > 50) {
-          this.currentFrameErrorMessage = '⚠️ TOO CLOSE';
+          this.currentFrameErrorMessage = 'Too close';
         } else {
-          this.currentFrameErrorMessage = '⚠️ INVALID FRAME';
+          this.currentFrameErrorMessage = 'Invalid frame';
         }
       }
     } else {
