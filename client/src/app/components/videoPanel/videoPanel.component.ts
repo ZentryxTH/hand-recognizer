@@ -5,7 +5,7 @@ import { GestureRecognizerService } from '../../models/gestureRecognizer/gesture
 import { parseAspectRatio, getAspectRatioClass } from '../../utils/aspect-ratio.utils';
 import { drawLandmarks, drawCategoryLabels } from '../../utils/drawing.utils';
 import { TelemetryData, ResolutionInfo } from '../../models/telemetry.interface';
-import { extractHandTelemetry } from '../../utils/telemetry.utils';
+import { extractHandTelemetry, applyGestureHeuristics } from '../../utils/telemetry.utils';
 
 @Component({
   selector: 'app-video-panel',
@@ -304,7 +304,8 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
 
             const startInference = performance.now();
 
-            this.cachedResults = this.gestureService.recognizeVideoFrame(canvas, startInference);
+            const rawResults = this.gestureService.recognizeVideoFrame(canvas, startInference);
+            this.cachedResults = applyGestureHeuristics(rawResults);
 
             const inferenceTime = Math.round(performance.now() - startInference);
             const doneTime = Math.round(performance.now() - now);

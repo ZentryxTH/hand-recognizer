@@ -8,7 +8,7 @@ import { ImageMetadata } from '../../models/image-metadata.interface';
 import { ImageProcessedData } from '../../models/telemetry.interface';
 import { parseAspectRatio } from '../../utils/aspect-ratio.utils';
 import { drawLandmarks, drawCategoryLabels } from '../../utils/drawing.utils';
-import { extractHandTelemetry } from '../../utils/telemetry.utils';
+import { extractHandTelemetry, applyGestureHeuristics } from '../../utils/telemetry.utils';
 
 @Component({
   selector: 'app-image-uploader',
@@ -226,7 +226,8 @@ export class ImageUploaderComponent implements OnChanges {
       if (forceModelInit) {
         await this.gestureService.initialize(config);
       }
-      results = this.gestureService.recognizeImage(canvas);
+      const rawResults = this.gestureService.recognizeImage(canvas);
+      results = applyGestureHeuristics(rawResults);
 
       const inferenceTime = Math.round(performance.now() - startTime);
 

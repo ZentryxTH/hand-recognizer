@@ -119,7 +119,7 @@ export function drawCategoryLabels(
     const score = Math.round(handedness[0].score * 100);
     let displayText = `${handLabel} ${score}%`;
     if (gesture?.[0]) {
-      displayText += ` - ${gesture[0].categoryName} (${Math.round(gesture[0].score * 100)}%)`;
+      displayText += ` - ${gesture[0].categoryName}`;
     }
 
     ctx.textAlign = 'center';
