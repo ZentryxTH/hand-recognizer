@@ -25,6 +25,16 @@
   &.ratio-4-5  { aspect-ratio: 4 / 5; max-width: 520px; }
   &.ratio-1-1  { aspect-ratio: 1 / 1; max-width: 520px; }
 
+  &.frame-ok {
+    border-color: #34c759;
+    box-shadow: 0 0 24px rgba(52, 199, 89, 0.4);
+  }
+
+  &.frame-error {
+    border-color: #ff2d55;
+    box-shadow: 0 0 24px rgba(255, 45, 85, 0.4);
+  }
+
   video {
     position: absolute;
     top: 0;
@@ -43,6 +53,26 @@
     display: block;
     object-fit: cover;
     z-index: 5;
+  }
+
+  .frame-caution-overlay {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.95);
+    color: #ffffff;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    z-index: 20;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    pointer-events: none;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 }
 

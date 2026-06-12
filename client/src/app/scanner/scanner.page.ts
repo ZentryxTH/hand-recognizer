@@ -56,7 +56,7 @@ export class ScannerPage implements OnInit, OnDestroy {
   selectedCameraId: string | null = null;
   isFrontCamera = true;
   targetResolution: '4k' | '2k' | '1080p' | '720p' | '480p' | 'device' = '1080p';
-  selectedAspectRatio: '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = '16:9';
+  selectedAspectRatio: '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = '1:1';
 
   // Upload image settings (decoupled from camera properties)
   imageAspectRatio: 'original' | '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = 'original';
@@ -98,8 +98,8 @@ export class ScannerPage implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadPersistedSettings();
     if (window.innerWidth < 768 || window.matchMedia('(max-width: 767px)').matches) {
-      this.selectedAspectRatio = '9:16';
-      this.imageAspectRatio = '9:16';
+      this.selectedAspectRatio = '1:1';
+      this.imageAspectRatio = '1:1';
     }
   }
 

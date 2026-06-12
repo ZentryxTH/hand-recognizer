@@ -59,6 +59,17 @@ export function applyGestureHeuristics(results: any): any {
   return results;
 }
 
+function getHandBoundingBox(landmarks: any[]) {
+  let minX = 1, minY = 1, maxX = 0, maxY = 0;
+  for (const lm of landmarks) {
+    if (lm.x < minX) minX = lm.x;
+    if (lm.y < minY) minY = lm.y;
+    if (lm.x > maxX) maxX = lm.x;
+    if (lm.y > maxY) maxY = lm.y;
+  }
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
 export function extractHandTelemetry(results: any, isFrontCamera: boolean): DetectedHand[] {
   const detectedHandsList: DetectedHand[] = [];
   if (results?.handedness) {
@@ -80,11 +91,25 @@ export function extractHandTelemetry(results: any, isFrontCamera: boolean): Dete
         gScore = Math.round(results.gestures[i][0].score * 100);
       }
 
+      let sizeRatio = 0;
+      let isFullyInFrame = false;
+
+      if (results.landmarks && results.landmarks[i]) {
+        const landmarks = results.landmarks[i];
+        const box = getHandBoundingBox(landmarks);
+        sizeRatio = Math.round((box.width * box.height) * 100); // percentage
+        const margin = 0.05;
+        isFullyInFrame = box.minX > margin && box.maxX < (1 - margin) && 
+                         box.minY > margin && box.maxY < (1 - margin);
+      }
+
       detectedHandsList.push({
         handedness: handLabel,
         score,
         gesture: gName,
-        gestureScore: gScore
+        gestureScore: gScore,
+        sizeRatio,
+        isFullyInFrame
       });
     }
   }

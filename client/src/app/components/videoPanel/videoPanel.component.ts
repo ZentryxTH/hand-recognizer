@@ -48,6 +48,8 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
   private lastTelemetryEmitTimeMs = 0;
   private lastHandsDetectedCount = 0;
   private cachedResults: any = null;
+  public currentFrameStatus: 'ok' | 'error' | 'none' = 'none';
+  public currentFrameErrorMessage: string | null = null;
 
   private pendingCameraLoad: Promise<void> | null = null;
   private pendingModelLoad: Promise<void> | null = null;
@@ -356,6 +358,26 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
       label = detectedHandsList[0].handedness;
       gesture = detectedHandsList[0].gesture;
       gestureScore = detectedHandsList[0].gestureScore;
+      
+      const hand = detectedHandsList[0];
+      if (hand.isFullyInFrame && hand.sizeRatio !== undefined && hand.sizeRatio >= 10 && hand.sizeRatio <= 50) {
+        this.currentFrameStatus = 'ok';
+        this.currentFrameErrorMessage = null;
+      } else {
+        this.currentFrameStatus = 'error';
+        if (!hand.isFullyInFrame) {
+          this.currentFrameErrorMessage = '⚠️ CUT OFF';
+        } else if (hand.sizeRatio !== undefined && hand.sizeRatio < 10) {
+          this.currentFrameErrorMessage = '⚠️ TOO FAR';
+        } else if (hand.sizeRatio !== undefined && hand.sizeRatio > 50) {
+          this.currentFrameErrorMessage = '⚠️ TOO CLOSE';
+        } else {
+          this.currentFrameErrorMessage = '⚠️ INVALID FRAME';
+        }
+      }
+    } else {
+      this.currentFrameStatus = 'none';
+      this.currentFrameErrorMessage = null;
     }
 
     const video = this.videoRef?.nativeElement;
@@ -378,5 +400,11 @@ export class VideoPanelComponent implements OnInit, OnDestroy, OnChanges {
 
   getRatioClass(): string {
     return getAspectRatioClass(this.selectedAspectRatio);
+  }
+
+  getFrameStatusClass(): string {
+    if (this.currentFrameStatus === 'ok') return 'frame-ok';
+    if (this.currentFrameStatus === 'error') return 'frame-error';
+    return '';
   }
 }

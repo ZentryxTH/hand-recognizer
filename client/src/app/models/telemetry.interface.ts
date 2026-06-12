@@ -7,6 +7,8 @@ export interface DetectedHand {
   score: number;
   gesture: string;
   gestureScore: number;
+  sizeRatio?: number;
+  isFullyInFrame?: boolean;
 }
 
 export interface TelemetryData {

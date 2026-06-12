@@ -1,6 +1,10 @@
-<div class="video-container" [ngClass]="[getRatioClass(), isFrontCamera ? 'mirrored' : '']">
+<div class="video-container" [ngClass]="[getRatioClass(), isFrontCamera ? 'mirrored' : '', getFrameStatusClass()]">
   <video #videoElement autoplay playsinline muted aria-hidden="true"></video>
   <canvas #canvasOverlay class="canvas-overlay" role="img" aria-label="Webcam feed with hand landmarker tracking overlay"></canvas>
+
+  <div class="frame-caution-overlay" *ngIf="currentFrameStatus === 'error' && currentFrameErrorMessage">
+    {{ currentFrameErrorMessage }}
+  </div>
 
   <div class="camera-loader" *ngIf="isLoading && !errorMessage">
     <ion-spinner name="crescent" color="primary"></ion-spinner>

@@ -17,7 +17,7 @@ import { ResolutionInfo } from '../../models/telemetry.interface';
 })
 export class VideoSettingComponent implements OnDestroy {
   @Input() targetResolution: '4k' | '2k' | '1080p' | '720p' | '480p' | 'device' = '1080p';
-  @Input() selectedAspectRatio: '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = '16:9';
+  @Input() selectedAspectRatio: '16:9' | '9:16' | '4:3' | '3:4' | '5:4' | '4:5' | '1:1' = '1:1';
   @Input() availableResolutions: ResolutionInfo[] = [];
   private _isOpen = false;
   private clickListener: ((event: MouseEvent) => void) | null = null;
